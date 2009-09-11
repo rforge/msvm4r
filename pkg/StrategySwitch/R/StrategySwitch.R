@@ -244,8 +244,16 @@ StrategySwitch <- function(y,X,Z,prior,A,b,tol=1e-4,maxiter=200,A.est=TRUE,prior
         tdat <- data.frame()
         gamma <- numeric(0)
         for(i in (1:ni)[b.est==k]) {
-          tdat <- rbind(tdat,dat[[i]][-(1:nt[i]),]) # delete random strategy
-          gamma <- c(gamma,as.numeric(fbo[[i]]$gamma[,-1])) # delete random strategy
+	  # check for random strategies
+	  rnd <- which(apply(matrix(dat[[i]]$x,nrow=nt),2,function(x) sum(x!=0))==0)
+	  if(length(rnd) > 0) {
+	    del <- as.numeric(matrix(1:ns*nt[i],ncol=ns)[,rnd])
+	    tdat <- rbind(tdat,dat[[i]][-del,]) # delete random strategies
+	    gamma <- c(gamma,as.numeric(fbo[[i]]$gamma[,-rnd])) # delete random strategy
+	  } else {
+	    tdat <- rbind(tdat,dat[[i]]) # delete random strategy
+	    gamma <- c(gamma,as.numeric(fbo[[i]]$gamma)) # delete random strategy
+	  }
         }
         tdat$w <- gamma
         b <- replace(b,b.est==k,glm(y~x-1,data=tdat,family=binomial(),weights=tdat$w)$coefficients)

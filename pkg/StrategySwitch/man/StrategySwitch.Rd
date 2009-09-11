@@ -25,7 +25,8 @@ verbose=FALSE,b.min=-Inf)
 \item{verbose}{(logical) to indicate whether details of the EM iterations should be printed to screen.}
 \item{b.min}{lower bound for the consistency parameter.}
 }
-\details{The Strategy Switch model.
+\details{This function estimates the Strategy Switch model (Speekenbrink et al., in press). The Strategy Switch model is formulated as a hidden Markov model
+in which the states are specific strategies of responding to cue patterns. Design matrices for the cue patterns are given in the list X. Each strategy specifies a predicted probability of responses for each cue pattern. These predictions are on a logit scale. The strategies are given as rows in the matrix Z, which contain coefficients such that X[i]][j,]%*%t(Z[k,]) results in the required logit value for subject i on trial j for strategy k. The example specifies the Z matrix for the Constant error strategies defined in Speekenbrink et al (2009). The are the Random, Singleton, Single Cue 1, Single Cue 2, Single Cue 3, Single Cue 4 and Multi-Cue strategies.
 }
 \value{An list with estimated A, b, prior, etc.}
 \author{Maarten Speekenbrink}
