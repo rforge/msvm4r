@@ -1,0 +1,7 @@
+This package implements the estimation of a dynamic linear regression model by
+a Kalman filter/smoother, using the EM algorithm for (hyper-)parameter
+estimation.
+
+While I made every effort to check the model implementation for bugs, some may
+remain. Please use at your own risk!
+
