@@ -1,21 +1,22 @@
-dlrm.filter <- function(y,x,A,Q,R,ws,Sigma,nt=nrow(x),nx=ncol(x),lt=1,bt=1,et=nt) {
+dlm.filter <- function(y,x,A,Q,R,ws,Sigma,nt=nrow(x),nx=ncol(x),lt=1,bt=1,et=nt) {
   # used by dlrm
   ny <- ncol(y)
   II <- diag(nx)
   w <- matrix(0.0,nrow=nt,ncol=nx)
   L <- P <- array(0.0,dim=c(ncol(Q),ncol(Q),nt))
-  Var <- H <- onestep <- rep(0.0,length=nt)
-  B <- matrix(0.0,ncol=nx)
+  Cov <- H <- array(0.0,dim=c(ny,ny,nt))
+  onestep <- matrix(0.0,nrow=nt,ncol=ny)
+  #B <- matrix(0.0,ncol=nx)
   K <- matrix(0.0,ncol=ny,nrow=nx)
   like <- 0.0
   for(case in 1:lt) {
     w[bt[case],] <- A%*%ws
     P[,,bt[case]] <- A%*%Sigma%*%t(A) + Q
-    Var[bt[case]] <- t(x[bt[case],])%*%P[,,bt[case]]%*%x[bt[case],] + R
+    Cov[,,bt[case]] <- t(x[bt[case],])%*%P[,,bt[case]]%*%x[bt[case],] + R
     for(i in bt[case]:(et[case]-1)) {
-      B <- matrix(x[i,],ncol=nx)
+      #B <- matrix(x[i,],ncol=nx)
       #t_P <- matrix(P[i,],ncol=nx)
-      H[i] <- 1/Var[i]
+      H[,,i] <- 1/Var[i]
       K <- P[,,i]%*%t(B)%*%H[i]
       L[,,i] <- A%*%(II - K%*%B)
       #L[i,] <- as.vector(t_L)
