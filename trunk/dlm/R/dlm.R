@@ -1,63 +1,53 @@
-dlm.filter <- function(y,x,A,Q,R,ws,Sigma,nt=nrow(x),nx=ncol(x),lt=1,bt=1,et=nt) {
-  # used by dlrm
+dlm.filter <- function(y,x,A,Q,R,ws,Sigma,nt=dim(x)[3],nx=dim(x)[2],lt=1,bt=1,et=nt) {
+  # used by dlm
+  # y: nt*ny matrix
+  # x: ny*nx*nt array
   ny <- ncol(y)
   II <- diag(nx)
   w <- matrix(0.0,nrow=nt,ncol=nx)
   L <- P <- array(0.0,dim=c(ncol(Q),ncol(Q),nt))
   Cov <- H <- array(0.0,dim=c(ny,ny,nt))
   onestep <- matrix(0.0,nrow=nt,ncol=ny)
-  #B <- matrix(0.0,ncol=nx)
   K <- matrix(0.0,ncol=ny,nrow=nx)
   like <- 0.0
   for(case in 1:lt) {
     w[bt[case],] <- A%*%ws
     P[,,bt[case]] <- A%*%Sigma%*%t(A) + Q
-    Cov[,,bt[case]] <- t(x[bt[case],])%*%P[,,bt[case]]%*%x[bt[case],] + R
+    Cov[,,bt[case]] <- x[,,bt[case]]%*%P[,,bt[case]]%*%t(x[,,bt[case]]) + R
     for(i in bt[case]:(et[case]-1)) {
-      #B <- matrix(x[i,],ncol=nx)
-      #t_P <- matrix(P[i,],ncol=nx)
-      H[,,i] <- 1/Var[i]
-      K <- P[,,i]%*%t(B)%*%H[i]
-      L[,,i] <- A%*%(II - K%*%B)
-      #L[i,] <- as.vector(t_L)
+      H[,,i] <- solve(Cov[,,i])
+      K <- P[,,i]%*%t(x[,,i])%*%H[,,i]
+      L[,,i] <- A%*%(II - K%*%x[,,i])
 
-      onestep[i] <- B%*%as.matrix(w[i,])
-      if(!any(is.na(y[i,]))) like <- like + dnorm(y[i,],onestep[i],sqrt(Var[i]),log=TRUE)
+      onestep[i,] <- x[,,i]%*%w[i,]
+      if(!any(is.na(y[i,]))) like <- like + dmvnorm(y[i,],onestep[i,],Cov[,,i],log=TRUE)
 
       if(!any(is.na(y[i,]))) w[i+1,] <- A%*%K%*%y[i,] + L[,,i]%*%w[i,] else w[i+1,] <- A%*%w[i,]
       if(!any(is.na(y[i,]))) P[,,i+1] <- L[,,i]%*%P[,,i]%*%t(A) + Q else P[i+1,] <- A%*%P[,,i]%*%t(A) + Q
-      Var[i+1] <- t(x[i+1,])%*%P[,,i+1]%*%x[i+1,] + R
+      Cov[,,i+1] <- x[,,i+1]%*%P[,,i+1]%*%t(x[,,i+1]) + R
     }
-    #i <- et[case]
-    #B <- matrix(x[i,],ncol=nx)
-    #t_P <- matrix(P[i,],ncol=nx)
-    #H[i] <- 1/(B%*%t_P%*%t(B) + R)
-    B <- matrix(x[et[case],],ncol=nx)
-    H[et[case]] <- 1/Var[et[case]]
-    K <- P[,,et[case]]%*%t(B)%*%H[et[case]]
-    L[,,et[case]] <- A%*%(II - K%*%B)
+    H[,,et[case]] <- solve(Cov[et[case]])
+    K <- P[,,et[case]]%*%t(x[,,et[case]])%*%H[,,et[case]]
+    L[,,et[case]] <- A%*%(II - K%*%x[,,et[case]])
     
-    onestep[et[case]] <- t(x[et[case],])%*%w[et[case],]
+    onestep[et[case],] <- x[,,et[case]]%*%w[et[case],]
   }
-  return(list(w=w,P=P,H=H,L=L,onestep=onestep,like=like,var=Var))
+  return(list(w=w,P=P,H=H,L=L,onestep=onestep,like=like,cov=Cov))
 }
 
-dlrm.smoother <- function(y,x,A,ws,Sigma,w,P,H,L,nt=nrow(x),nx=ncol(x),lt=1,bt=1,et=nt) {
-  # used by dlrm
+dlm.smoother <- function(y,x,A,ws,Sigma,w,P,H,L,nt=dim(x)[3],nx=dim(x)[2],lt=1,bt=1,et=nt) {
+  # used by dlm
   II <- diag(nx)
   wks <- matrix(0.0,nrow=nt,ncol=nx)
   Pks <- PCks <- array(0.0,dim=c(nx,nx,nt))
   P0s <- array(0.0,dim=c(nx,nx,lt))
   w0s <- array(0.0,dim=c(nx,lt))
-  #t_P <- t_L <- matrix(0.0,nrow=nx,ncol=nx)  
   for(case in 1:lt) {
     u <- rep(0.0,nx)
     U <- matrix(0.0,ncol=nx,nrow=nx)
     for(i in et[case]:bt[case]) {
-      #t_P <- matrix(P[i,],ncol=nx)
-      #t_L <- matrix(L[i,],ncol=nx)
-      if(!any(is.na(y[i,]))) u <- as.vector(as.matrix(x[i,])%*%H[i]%*%(y[i,] - t(x[i,])%*%w[i,]) + t(L[,,i])%*%u) else u <- t(A)%*%u
-      if(!any(is.na(y[i,]))) U  <- as.matrix(x[i,])%*%H[i]%*%t(x[i,]) + t(L[,,i])%*%U%*%L[,,i] else U <- t(A)%*%U%*%A
+      if(!any(is.na(y[i,]))) u <- t(x[,,i])%*%H[,,i]%*%(y[i,] - x[,,i]%*%w[i,]) + t(L[,,i])%*%u else u <- t(A)%*%u
+      if(!any(is.na(y[i,]))) U  <- t(x[,,i])%*%H[,,i]%*%x[,,i] + t(L[,,i])%*%U%*%L[,,i] else U <- t(A)%*%U%*%A
       wks[i,] <- w[i,] + P[,,i]%*%u
       Pks[,,i] <- P[,,i] - P[,,i]%*%U%*%P[,,i]
       ifelse(i>bt[case],PCks[,,i] <- (II - P[,,i]%*%U)%*%L[,,i-1]%*%P[,,i-1],PCks[,,i] <- (II - P[,,bt[case]]%*%U)%*%A%*%Sigma)
@@ -68,7 +58,7 @@ dlrm.smoother <- function(y,x,A,ws,Sigma,w,P,H,L,nt=nrow(x),nx=ncol(x),lt=1,bt=1
   return(list(wks=wks,Pks=Pks,PCks=PCks,w0s=w0s,P0s=P0s))
 }
 
-dlrm.em <- function(smth,y,x,A,nt=nrow(x),nx=ncol(x),lt=1,bt=1,et=nt) {
+dlm.em <- function(smth,y,x,A,nt=dim(x)[3],nx=dim(x)[2],lt=1,bt=1,et=nt) {
   a <- b <- c <- d <- matrix(0,ncol=nx,nrow=nx)
   for(case in 1:lt) {
     # used by dlrm
@@ -81,44 +71,36 @@ dlrm.em <- function(smth,y,x,A,nt=nrow(x),nx=ncol(x),lt=1,bt=1,et=nt) {
       c <- c + smth$Pks[,,i] + smth$wks[i,]%*%t(smth$wks[i,])
     }
   }
-  #p <- y - diag(x%*%t(smth$wks)) # memory intensive!!!
-  p <- y - rowSums(x*smth$wks) # much better!
-  
+  p <- y - apply(aperm(x,c(3,2,1))*as.vector(smth$wks),c(1,3),sum)
   ws <- apply(smth$w0s,1,mean)
-#  Sigma <- apply(smth$P0s,c(1,2),mean)
-  
-  # new computation:
-
   for(case in 1:lt) {
     d <- d + (smth$w0s[,case] - ws)%*%t(smth$w0s[,case] - ws)
   }
   d <- d/lt
   Sigma <- apply(smth$P0s,c(1,2),mean) + d # see Max Welling, The Kalman Filter
-  #TODO: Check!
-  #cat(apply(smth$P0s,c(1,2),mean))
-  #cat("\n")
-  #cat(d)
-  #cat("\n")
-  #cat(Sigma)
-  #cat("\n")
-  
+
   Q <- (1/nt)*(c - b%*%t(A) - A%*%t(b) + A%*%a%*%t(A))
-  #Q <- (1/nt)*(c - tcrossprod(b,A) - tcrossprod(A,b) + tcrossprod(A%*%a),A))
   Q <- (t(Q)+Q)/2 # ensure symmetry
   
   A <- b%*%solve(a) # A = Phi
-  if(sum(is.na(y)) == 0) R <-(1/nt)*sum(p^2 + colSums(matrix((as.vector(apply(x,1,rep,times=nx))*as.vector(apply(x,1,rep,each=nx))),nrow=nx*nx)*matrix(smth$Pks,nrow=nx*nx))) else {
+  
+  if(sum(is.na(y)) != 0) {
     nna <- !is.na(y)
     nt <- sum(nna)
     p <- p[nna,]
     x <- x[nna,]
-    smth$Pks <- smth$Pks[,,nna]
-    R <-(1/nt)*sum(p^2 + colSums(matrix((as.vector(apply(x,1,rep,times=nx))*as.vector(apply(x,1,rep,each=nx))),nrow=nx*nx)*matrix(smth$Pks,nrow=nx*nx)))
+    smth$Pks <- smth$Pks[,,nna]  
   }
+  
+  Rt <- matrix(0,0,ncol=ny,nrow=ny)
+  for(i in 1:nt) {
+    Rt <- Rt + p[i,]%*%t(p[i,]) + x[,,i]%*%smth$Pks[,,i]%*%t(x[,,i])
+  }
+  R <- (1/nt)*Rt
   return(list(A=A,Q=Q,R=R,ws=ws,Sigma=Sigma))
 }
 
-dlrm <- function(formula,data,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,ntimes=NULL,tol=1e-5,est.ws=TRUE,est.Sigma=TRUE,est.A=TRUE,est.Q=TRUE,est.R=TRUE,filter.only=FALSE,verbose=FALSE,criterion=c("logLike","parameter"),method="BFGS",hessian=FALSE,switch.LL=.5,switch.wait=5) {
+dlm <- function(formula,data,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,ntimes=NULL,tol=1e-5,est.ws=TRUE,est.Sigma=TRUE,est.A=TRUE,est.Q=TRUE,est.R=TRUE,filter.only=FALSE,verbose=FALSE,criterion=c("logLike","parameter"),method="BFGS",hessian=FALSE,switch.LL=.5,switch.wait=5) {
   # Dynamic Linear Regression Model 
   #    using Kalman filter/smoother and EM/numerical optimization
   # author: M. Speekenbrink
@@ -142,16 +124,30 @@ dlrm <- function(formula,data,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,ntim
   y <- model.response(mf)
 
   if(is.vector(y)) y <- matrix(y,nrow=length(y))
-  if(ncol(y)>1) stop("multivariate response is not allowed")
+  
   x <- if(!is.empty.model(mt)) {
     model.matrix(mt, mf, contrasts)
   } else matrix(, length(y), 0)
   x <-  matrix(as.numeric(x),nrow=dim(x)[1],ncol=dim(x)[2])
-  x.names <- dimnames(x)[[2]]
-  y.names <- levels(eval(attr(mt,"variables"),envir=mf)[[1]])
   
-  nx <- ncol(x)
+  ny <- ncol(y)
   nt <- nrow(x)
+  nx <- ncol(x)
+  
+  # expand x
+  xn <- array(0.0,dim=c(ny,ny*nx,nt))
+  for(i in 1:nt) {
+    for(j in 1:ny) {
+      jid <- (j-1)*nx+1
+      xn[j,jid:(jid+nx-1),i] <- x[i,]
+    }
+  }
+  x <- xn
+  
+  #x.names <- dimnames(x)[[2]]
+  #y.names <- levels(eval(attr(mt,"variables"),envir=mf)[[1]])
+  
+  nx <- dim(x)[2]
   
   if(is.null(ntimes)) ntimes <- nt
   lt <- length(ntimes)
@@ -161,7 +157,7 @@ dlrm <- function(formula,data,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,ntim
   if(missing(Sigma)) Sigma <- diag(nx)
   if(missing(Q)) Q <- diag(nx)
   if(missing(A)) A <- diag(nx)
-  if(missing(R)) R <- diag(ncol(y))
+  if(missing(R)) R <- diag(ny)
   if(missing(ws)) ws <- rep(0,nx)
 
   if(is.null(Q.c)) Q.c <- matrix(1,ncol=ncol(Q),nrow=nrow(Q))
@@ -173,7 +169,7 @@ dlrm <- function(formula,data,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,ntim
   if(sum(Q.c) == sum(diag(Q.c))) Q.diag <- TRUE else Q.diag <- FALSE
   if(sum(Sigma.c) == sum(diag(Sigma.c))) Sigma.diag <- TRUE else Sigma.diag <- FALSE
 
-  filt <- dlrm.filter(y=y,x=x,A=A,Q=Q,R=R,ws=ws,Sigma=Sigma,nt=nt,nx=nx,lt=lt,bt=bt,et=et)
+  filt <- dlm.filter(y=y,x=x,A=A,Q=Q,R=R,ws=ws,Sigma=Sigma,nt=nt,nx=nx,lt=lt,bt=bt,et=et)
   LL.old <- LL <- filt$like
   if(filter.only) {
     # skip smoother and break
@@ -182,7 +178,7 @@ dlrm <- function(formula,data,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,ntim
     smth$wks <- filt$w
     smth$Pks <- filt$P
   } else {
-    smth <- dlrm.smoother(y=y,x=x,A=A,ws=ws,Sigma=Sigma,w=filt$w,P=filt$P,H=filt$H,L=filt$L,nt=nt,nx=nx,lt=lt,bt=bt,et=et)
+    smth <- dlm.smoother(y=y,x=x,A=A,ws=ws,Sigma=Sigma,w=filt$w,P=filt$P,H=filt$H,L=filt$L,nt=nt,nx=nx,lt=lt,bt=bt,et=et)
   }
   
   j <- 0
@@ -202,12 +198,12 @@ dlrm <- function(formula,data,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,ntim
 
     if(((abs(LL.dif) < switch.LL) & opt.ok) || force.opt) {
       if(verbose) cat("starting optim \n")
-      em <- dlrm.opt(y=y,x=x,A=A,Q=Q,R=R,ws=ws,Sigma=Sigma,est.ws=est.ws,est.Sigma=est.Sigma,est.A=est.A,est.Q=est.Q,est.R=est.R,method=method,hessian=hessian,lt=lt,bt=bt,et=et)
+      em <- dlm.opt(y=y,x=x,A=A,Q=Q,R=R,ws=ws,Sigma=Sigma,est.ws=est.ws,est.Sigma=est.Sigma,est.A=est.A,est.Q=est.Q,est.R=est.R,method=method,hessian=hessian,lt=lt,bt=bt,et=et)
       opt.ok <- FALSE # avoid consecutive numerical optimization
       k <- 0
       converge <- TRUE # delete me
     } else {
-      em <- dlrm.em(smth=smth,y=y,x=x,A=A,nt=nt,nx=nx,lt=lt,bt=bt,et=et)
+      em <- dlm.em(smth=smth,y=y,x=x,A=A,nt=nt,nx=nx,lt=lt,bt=bt,et=et)
       #opt.ok <- TRUE #numerical optimization after em step ok
       k <- k+1
     }
@@ -250,14 +246,14 @@ dlrm <- function(formula,data,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,ntim
       #converge <- TRUE
     }
     
-    smth <- dlrm.smoother(y=y,x=x,A=A,ws=ws,Sigma=Sigma,w=filt$w,P=filt$P,H=filt$H,L=filt$L,nt=nt,nx=nx,lt=lt,bt=bt,et=et)
+    smth <- dlm.smoother(y=y,x=x,A=A,ws=ws,Sigma=Sigma,w=filt$w,P=filt$P,H=filt$H,L=filt$L,nt=nt,nx=nx,lt=lt,bt=bt,et=et)
 
     if(k >= switch.wait) opt.ok <- TRUE
     if(verbose) cat("iteration",j,": LL =",LL,":LLdif =",LL.dif,"\n")
   }
   if(!filter.only) {
-    filt <- dlrm.filter(y=y,x=x,A=A,Q=Q,R=R,ws=ws,Sigma=Sigma,nt=nt,nx=nx,lt=lt,bt=bt,et=et)
-    smth <- dlrm.smoother(y=y,x=x,A=A,ws=ws,Sigma=Sigma,w=filt$w,P=filt$P,H=filt$H,L=filt$L,nt=nt,nx=nx,lt=lt,bt=bt,et=et)
+    filt <- dlm.filter(y=y,x=x,A=A,Q=Q,R=R,ws=ws,Sigma=Sigma,nt=nt,nx=nx,lt=lt,bt=bt,et=et)
+    smth <- dlm.smoother(y=y,x=x,A=A,ws=ws,Sigma=Sigma,w=filt$w,P=filt$P,H=filt$H,L=filt$L,nt=nt,nx=nx,lt=lt,bt=bt,et=et)
   }
   # Number of free parameters (EM)
   npar <- 0
@@ -274,7 +270,7 @@ dlrm <- function(formula,data,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,ntim
 }
 
 
-dlrm.opt <- function(y,x,A,Q,R,ws,Sigma,Q.diag=FALSE,Sigma.diag=FALSE,est.ws=TRUE,est.Sigma=TRUE,est.A=TRUE,est.Q=TRUE,est.R=TRUE,method="BFGS",lt=1,bt=1,et=nt,hessian=FALSE,...) {
+dlm.opt <- function(y,x,A,Q,R,ws,Sigma,Q.diag=FALSE,Sigma.diag=FALSE,est.ws=TRUE,est.Sigma=TRUE,est.A=TRUE,est.Q=TRUE,est.R=TRUE,method="BFGS",lt=1,bt=1,et=nt,hessian=FALSE,...) {
   # Dynamic Linear Regression Model
   #    using Kalman filter/smoother and EM
 
@@ -324,7 +320,7 @@ dlrm.opt <- function(y,x,A,Q,R,ws,Sigma,Q.diag=FALSE,Sigma.diag=FALSE,est.ws=TRU
   start <- list()
   if(est.A) start$A <- as.numeric(A)
   if(est.Q) start$Q <- coef(nlme::pdSymm(Q))
-  if(est.R) start$R <- log(R)
+  if(est.R) start$R <- coef(nlme::pdSymm(R))
   if(est.ws) start$ws <- as.numeric(ws)
   if(est.Sigma) start$Sigma <- coef(nlme::pdSymm(Sigma))
 
@@ -344,8 +340,8 @@ dlrm.opt <- function(y,x,A,Q,R,ws,Sigma,Q.diag=FALSE,Sigma.diag=FALSE,est.ws=TRU
       attr(ws,"dim") <- dimws
   }
   if(length(tmp <- grep("R",names)) > 0) {
-      R <- exp(fit$par[tmp])
-      attr(R,"dim") <- dimR
+      R <- fit$par[tmp]
+      R <- as.matrix(nlme::pdSymm(R))
   }
   if(length(tmp <- grep("Sigma",names)) > 0) {
       Sigma <- fit$par[tmp]
@@ -355,7 +351,7 @@ dlrm.opt <- function(y,x,A,Q,R,ws,Sigma,Q.diag=FALSE,Sigma.diag=FALSE,est.ws=TRU
   return(list(A=A,Q=Q,R=R,ws=ws,Sigma=Sigma,hessian=hessian))
 }
 
-dlrm.hess <- function(y,x,A,Q,R,ws,Sigma,Q.diag,Sigma.diag,est.ws,est.Sigma,est.A,est.Q,est.R,lt=1,bt=1,et=nt,method="numDeriv",...) {
+dlm.hess <- function(y,x,A,Q,R,ws,Sigma,Q.diag,Sigma.diag,est.ws,est.Sigma,est.A,est.Q,est.R,lt=1,bt=1,et=nt,method="numDeriv",...) {
   #require(numDeriv)
   if(method=="numDeriv") require(numDeriv)
   if(method=="fdHess") require(nlme)
@@ -428,7 +424,7 @@ dlrm.hess <- function(y,x,A,Q,R,ws,Sigma,Q.diag,Sigma.diag,est.ws,est.Sigma,est.
   hess
 }
 
-dlrm.Hessian <- function(mod,method="numDeriv",ntimes,...) {
+dlm.Hessian <- function(mod,method="numDeriv",ntimes,...) {
   y <- mod$response
   x <- mod$predictor
   A <- mod$A
@@ -517,3 +513,4 @@ dlrm.CI <- function(mod,p=.95) {
   pm <- crit * sqrt(diag(inv.fish))
   cbind(theta.hat,lower,upper,pm)
 }
+
