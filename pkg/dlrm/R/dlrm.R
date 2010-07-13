@@ -117,7 +117,7 @@ dlrm.em <- function(smth,y,x,A,nt=nrow(x),nx=ncol(x),lt=1,bt=1,et=nt) {
   return(list(A=A,Q=Q,R=R,ws=ws,Sigma=Sigma))
 }
 
-dlrm <- function(formula,data,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,ntimes=NULL,tol=1e-5,est.ws=TRUE,est.Sigma=TRUE,est.A=TRUE,est.Q=TRUE,est.R=TRUE,filter.only=FALSE,verbose=FALSE,criterion=c("logLike","parameter"),method="BFGS",hessian=FALSE,switch.LL=.5,switch.wait=5) {
+dlrm <- function(formula,data,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,ntimes=NULL,tol=1e-5,est.ws=TRUE,est.Sigma=TRUE,est.A=TRUE,est.Q=TRUE,est.R=TRUE,filter.only=FALSE,verbose=FALSE,criterion=c("logLik","parameter"),method="BFGS",hessian=FALSE,switch.LL=.5,switch.wait=5) {
   # Dynamic Linear Regression Model 
   #    using Kalman filter/smoother and EM/numerical optimization
   # author: M. Speekenbrink
@@ -222,7 +222,7 @@ dlrm <- function(formula,data,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,ntim
     LL <- filt$like 
     LL.dif <- LL.old - LL
     
-    if(criterion[1]==1) {
+    if(criterion=="parameter") {
       if(all(abs(c(ws-em$ws,Sigma-(abs(1-Sigma.c)*Sigma + Sigma.c*em$Sigma),A-em$A,Q-(abs(1-Q.c)*Q + Q.c*em$Q),R-em$R)) < tol )) converge <- TRUE
     } else {
       if(abs(LL.dif) < tol) converge <- TRUE
