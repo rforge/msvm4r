@@ -1,0 +1,24 @@
+import(methods)
+
+exportClasses(
+	ParticleBase,
+	ParticleMatrix
+)
+
+exportMethods(
+	getParticles,
+	"setParticles<-",
+	ParticleMove,
+	doParticleMove,
+	SmcIterate,
+	doSmcIterate,
+	UpdateWeights,
+	doUpdateWeights,
+	ESS,
+	getLogWeights,
+	getWeights,
+	getNormWeights,
+	ParticleMean,
+	ParticleCov,
+	ParticleVar
+)
