@@ -26,10 +26,9 @@ setReplaceMethod(
     }
 )
 
-
 setMethod("ParticleMove",signature(object="ParticleBase"),
 	function(object,...) {
-		object@particles <- object@p_move(object,...)
+		object@particles <- object@p_move(getParticles(object,...),...)
 		object
 	}
 )
@@ -39,10 +38,28 @@ setMethod("doParticleMove",signature(object="ParticleBase"),
         name <- deparse(substitute(object))
         name <- paste(name,"@particles",sep="")
 		#setParticles(object,...) <- object@p_move(object,...)
-		assign(name,object@p_move(object,...),envir=parent.frame())
+		assign(name,object@p_move(getParticles(object,...),...),envir=parent.frame())
         return(invisible())
 	}
 )
+
+setMethod("McmcMove",signature(object="ParticleBase"),
+	function(object,data,...) {
+		object@particles <- object@mcmc_move(getParticles(object,...),data,...)
+		object
+	}
+)
+
+setMethod("doMcmcMove",signature(object="ParticleBase"),
+	function(object,data,...) {
+        name <- deparse(substitute(object))
+        name <- paste(name,"@particles",sep="")
+		#setParticles(object,...) <- object@p_move(object,...)
+		assign(name,object@mcmc_move(getParticles(object,...),data,...),envir=parent.frame())
+        return(invisible())
+	}
+)
+
 
 setMethod("SmcIterate",signature(object="ParticleBase"),
 	function(object,data,...) {
@@ -68,7 +85,7 @@ setMethod("doSmcIterate",signature(object="ParticleBase"),
 
 setMethod("UpdateWeights",signature(object="ParticleBase"),
 	function(object,data,...) {
-		logWeights <- object@lW_update(data,object,...)
+		logWeights <- object@lW_update(getParticles(object,...),getLogWeights(object,...),data,...)
 		# normalize to sensible values
 		max <- max(-.Machine$double.xmax,logWeights)
 		object@logWeights <- logWeights - max
@@ -88,7 +105,7 @@ setMethod("doUpdateWeights",signature(object="ParticleBase"),
 	function(object,data,...) {
         name <- deparse(substitute(object))
         name <- paste(name,"@logWeights",sep="")
-		logWeights <- object@lW_update(data,object,...)
+		logWeights <- object@lW_update(getParticles(object,...),data,...)
 		# normalize to sensible values
 		max <- max(-.Machine$double.xmax,logWeights)
         logWeights <- logWeights - max

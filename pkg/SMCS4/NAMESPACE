@@ -20,5 +20,6 @@ exportMethods(
 	getNormWeights,
 	ParticleMean,
 	ParticleCov,
-	ParticleVar
+	ParticleVar,
+	Resample
 )

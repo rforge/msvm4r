@@ -32,7 +32,7 @@ setMethod("Resample",signature(object="ParticleMatrix"),
 		N <- object@N
 		switch(type,
 			systematic = {
-				ids <- .Call("smc_resample_systematic",logWeights = logWeights)
+				ids <- .Call("resample_systematic",logWeights = logWeights,PACKAGE="SMCS4")
 			},
 			residual = {
 				ids <- smc_resample_residual(logWeights,...)
@@ -41,7 +41,7 @@ setMethod("Resample",signature(object="ParticleMatrix"),
 				ids <- smc_resample_multinomial(logWeights,...)
 			},
 			stratified = {
-				ids <- .Call("smc_resample_stratified",logWeights = logWeights)
+				ids <- .Call("resample_stratified",logWeights = logWeights,PACKAGE="SMCS4")
 			}
 		)
 		if(object@p_margin == 2) object@particles <- object@particles[,ids] else object@particles <- object@particles[ids,]
