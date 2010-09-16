@@ -19,4 +19,6 @@ setGeneric("UpdateWeights",function(object,data,...) standardGeneric("UpdateWeig
 setGeneric("doUpdateWeights",function(object,data,...) standardGeneric("doUpdateWeights"))
 setGeneric("SmcIterate",function(object,func,...) standardGeneric("SmcIterate"))
 setGeneric("doSmcIterate",function(object,func,...) standardGeneric("doSmcIterate"))
+setGeneric("getN",function(object,...) standardGeneric("getN"))
+
 #setGeneric("SmcIntegrate",function(object,func,...) standardGeneric("SmcIntegrate"))

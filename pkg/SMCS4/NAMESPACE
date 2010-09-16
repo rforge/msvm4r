@@ -1,4 +1,5 @@
 import(methods)
+importFrom(stats4,logLik)
 
 exportClasses(
 	ParticleBase,
@@ -18,10 +19,12 @@ exportMethods(
 	doMcmcMove,
 	ESS,
 	getLogWeights,
+	"setLogWeights<-",
 	getWeights,
 	getNormWeights,
 	ParticleMean,
 	ParticleCov,
 	ParticleVar,
-	Resample
+	Resample,
+	getN
 )

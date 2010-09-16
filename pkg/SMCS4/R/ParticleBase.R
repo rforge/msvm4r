@@ -5,6 +5,7 @@ setClass("ParticleBase",
 		p_move = "function",
 		mcmc_move = "function",
 		lW_update = "function",
+		logLik = "function",
 		resampleC = "numeric",
 		N = "integer"
 	)
@@ -105,7 +106,7 @@ setMethod("doUpdateWeights",signature(object="ParticleBase"),
 	function(object,data,...) {
         name <- deparse(substitute(object))
         name <- paste(name,"@logWeights",sep="")
-		logWeights <- object@lW_update(getParticles(object,...),data,...)
+		logWeights <- object@lW_update(getParticles(object,...),getLogWeights(object,...),data,...)
 		# normalize to sensible values
 		max <- max(-.Machine$double.xmax,logWeights)
         logWeights <- logWeights - max
@@ -119,8 +120,8 @@ setMethod("doUpdateWeights",signature(object="ParticleBase"),
 setMethod("ESS",signature(object="ParticleBase"),
 	function(object,...) {
 		#w <- exp(object@logWeights)
-		sumw <- sum(exp(object@logWeights))
-		sumsq <- sum(exp(2*object@logWeights))
+		sumw <- sum(getWeights(object,...))
+		sumsq <- sum(exp(2*getLogWeights(object,...)))
 		exp(-log(sumsq) + 2*log(sumw))
 	}
 )
@@ -157,3 +158,16 @@ setMethod("getNormWeights",signature(object="ParticleBase"),
     }
   }
 )
+
+setMethod("getN",signature(object="ParticleBase"),
+    function(object,...) {
+        return(object@N)
+    }
+)
+
+setMethod("logLik",signature(object="ParticleBase"),
+    function(object,data,...) {
+        return(object@logLik(getParticles(object,...),data,...))
+    }
+)
+
