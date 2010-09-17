@@ -45,27 +45,27 @@ setMethod("doParticleMove",signature(object="ParticleBase"),
 )
 
 setMethod("McmcMove",signature(object="ParticleBase"),
-	function(object,data,...) {
-		object@particles <- object@mcmc_move(getParticles(object,...),data,...)
+	function(object,...) {
+		object@particles <- object@mcmc_move(getParticles(object,...),...)
 		object
 	}
 )
 
 setMethod("doMcmcMove",signature(object="ParticleBase"),
-	function(object,data,...) {
+	function(object,...) {
         name <- deparse(substitute(object))
         name <- paste(name,"@particles",sep="")
 		#setParticles(object,...) <- object@p_move(object,...)
-		assign(name,object@mcmc_move(getParticles(object,...),data,...),envir=parent.frame())
+		assign(name,object@mcmc_move(getParticles(object,...),...),envir=parent.frame())
         return(invisible())
 	}
 )
 
 
 setMethod("SmcIterate",signature(object="ParticleBase"),
-	function(object,data,...) {
+	function(object,...) {
 		object <- ParticleMove(object,...)
-		object <- UpdateWeights(object,data,...)
+		object <- UpdateWeights(object,...)
 		ess <- ESS(object,...)
 		if(ess < (object@resampleC*object@N)) object <- Resample(object,...)
 		object
@@ -76,7 +76,7 @@ setMethod("doSmcIterate",signature(object="ParticleBase"),
 	function(object,...) {
         name <- deparse(substitute(object))
 		doParticleMove(object,...)
-        doUpdateWeights(object,data,...)
+        doUpdateWeights(object,...)
         ess <- ESS(object,...)
 		if(ess < (object@resampleC*object@N)) doResample(object,...)
 		assign(name,object,envir=parent.frame())
@@ -86,7 +86,7 @@ setMethod("doSmcIterate",signature(object="ParticleBase"),
 
 setMethod("UpdateWeights",signature(object="ParticleBase"),
 	function(object,data,...) {
-		logWeights <- object@lW_update(getParticles(object,...),getLogWeights(object,...),data,...)
+		logWeights <- object@lW_update(getParticles(object,...),getLogWeights(object,...),...)
 		# normalize to sensible values
 		max <- max(-.Machine$double.xmax,logWeights)
 		object@logWeights <- logWeights - max
@@ -106,7 +106,7 @@ setMethod("doUpdateWeights",signature(object="ParticleBase"),
 	function(object,data,...) {
         name <- deparse(substitute(object))
         name <- paste(name,"@logWeights",sep="")
-		logWeights <- object@lW_update(getParticles(object,...),getLogWeights(object,...),data,...)
+		logWeights <- object@lW_update(getParticles(object,...),getLogWeights(object,...),...)
 		# normalize to sensible values
 		max <- max(-.Machine$double.xmax,logWeights)
         logWeights <- logWeights - max
@@ -166,8 +166,8 @@ setMethod("getN",signature(object="ParticleBase"),
 )
 
 setMethod("logLik",signature(object="ParticleBase"),
-    function(object,data,...) {
-        return(object@logLik(getParticles(object,...),data,...))
+    function(object,...) {
+        return(object@logLik(getParticles(object,...),...))
     }
 )
 

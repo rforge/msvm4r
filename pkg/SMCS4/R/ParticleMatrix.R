@@ -3,9 +3,12 @@ setClass("ParticleMatrix",
 	representation(
 		particles = "matrix",
         p_margin = "integer"
-	)
-)
+	),
+	prototype=prototype(
+        p_margin = as.integer(1)
+    )
 
+)
 
 setMethod("ParticleMean",signature(object="ParticleMatrix"),
 	function(object,...) {

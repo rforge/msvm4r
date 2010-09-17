@@ -26,5 +26,6 @@ exportMethods(
 	ParticleCov,
 	ParticleVar,
 	Resample,
+	doResample,
 	getN
 )
