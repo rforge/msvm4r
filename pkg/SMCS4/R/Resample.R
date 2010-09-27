@@ -10,17 +10,17 @@
 smc_resample_multinomial <- function(logWeights,...) {
     N <- length(logWeights)
     weights <- exp(logWeights)
-	times <- rowSums(rmultinom(N,size=1,prob=weights))
+	  times <- rowSums(rmultinom(N,size=1,prob=weights))
     ids <- rep(1:N,times=times)
     return(ids)
 }
 
 smc_resample_residual <- function(logWeights,...) {
     N <- length(logWeights)
-	weights <- exp(logWeights)
-	Nw <- floor(N*weights/sum(weights))
-	p <- weights - Nw/N
-	times <- Nw + rowSums(rmultinom(N,size=1,prob=p))
+	  weights <- exp(logWeights)
+	  Nw <- floor(N*weights/sum(weights))
+	  p <- weights - Nw/N
+	  times <- Nw + rowSums(rmultinom(N,size=1,prob=p))
     ids <- rep(1:N,times=times)
     return(ids)
 }
