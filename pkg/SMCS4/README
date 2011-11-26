@@ -1,6 +1,0 @@
-This package provides S4 definitions and methods to implement Sequential Monte Carlo 
-samplers (e.g., particle filters).
-
-While I made every effort to check the model implementation for bugs, some may
-remain. Please use at your own risk!
-
