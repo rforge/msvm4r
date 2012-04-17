@@ -67,6 +67,8 @@ dlrm.smoother <- function(y,x,A,ws,Sigma,w,P,H,L,nt=nrow(x),nx=ncol(x),lt=1,bt=1
   return(list(wks=wks,Pks=Pks,PCks=PCks,w0s=w0s,P0s=P0s))
 }
 
+
+
 dlrm.em <- function(smth,y,x,A,nt=nrow(x),nx=ncol(x),lt=1,bt=1,et=nt) {
   a <- b <- c <- d <- matrix(0,ncol=nx,nrow=nx)
   for(case in 1:lt) {
@@ -116,6 +118,7 @@ dlrm.em <- function(smth,y,x,A,nt=nrow(x),nx=ncol(x),lt=1,bt=1,et=nt) {
   }
   return(list(A=A,Q=Q,R=R,ws=ws,Sigma=Sigma))
 }
+
 
 dlrm <- function(formula,data,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,ntimes=NULL,tol=1e-5,est.ws=TRUE,est.Sigma=TRUE,est.A=TRUE,est.Q=TRUE,est.R=TRUE,filter.only=FALSE,verbose=FALSE,criterion=c("logLik","parameter"),method="BFGS",hessian=FALSE,switch.LL=.5,switch.wait=5) {
   # Dynamic Linear Regression Model 
@@ -201,7 +204,7 @@ dlrm <- function(formula,data,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,ntim
 
     if(((abs(LL.dif) < switch.LL) & opt.ok) || force.opt) {
       if(verbose) cat("starting optim \n")
-      em <- dlrm.opt(y=y,x=x,A=A,Q=Q,R=R,ws=ws,Sigma=Sigma,est.ws=est.ws,est.Sigma=est.Sigma,est.A=est.A,est.Q=est.Q,est.R=est.R,method=method,hessian=hessian,lt=lt,bt=bt,et=et)
+      em <- dlrm.opt(y=y,x=x,A=A,Q=Q,R=R,ws=ws,Sigma=Sigma,Q.diag=Q.diag,Sigma.diag=Sigma.diag,est.ws=est.ws,est.Sigma=est.Sigma,est.A=est.A,est.Q=est.Q,est.R=est.R,method=method,hessian=hessian,lt=lt,bt=bt,et=et)
       opt.ok <- FALSE # avoid consecutive numerical optimization
       k <- 0
       converge <- TRUE # delete me
@@ -336,7 +339,7 @@ dlrm.opt <- function(y,x,A,Q,R,ws,Sigma,Q.diag=FALSE,Sigma.diag=FALSE,est.ws=TRU
   }
   if(length(tmp <- grep("Q",names)) > 0) {
       Q <- fit$par[tmp]
-      Q <- as.matrix(nlme::pdSymm(Q))
+      if(Q.diag) Q <- as.matrix(nlme::pdDiag(Q)) else Q <- as.matrix(nlme::pdSymm(Q))
   }
   if(length(tmp <- grep("ws",names)) > 0) {
       ws <- fit$par[tmp]
@@ -348,7 +351,7 @@ dlrm.opt <- function(y,x,A,Q,R,ws,Sigma,Q.diag=FALSE,Sigma.diag=FALSE,est.ws=TRU
   }
   if(length(tmp <- grep("Sigma",names)) > 0) {
       Sigma <- fit$par[tmp]
-      Sigma <- as.matrix(nlme::pdSymm(Sigma))
+      if(Sigma.diag) Sigma <- as.matrix(nlme::pdDiag(Sigma)) else Sigma <- as.matrix(nlme::pdSymm(Sigma))
   }
   hessian <- fit$hessian
   return(list(A=A,Q=Q,R=R,ws=ws,Sigma=Sigma,hessian=hessian))
