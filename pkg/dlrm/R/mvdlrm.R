@@ -19,7 +19,9 @@ mvdlrm.filter <- function(y,x,A,Q,R,ws,Sigma,nt=dim(x)[3],nx=dim(x)[2],lt=1,bt=1
     w[bt[case],] <- A%*%ws
     P[,,bt[case]] <- A%*%Sigma%*%t(A) + Q
     Var[,,bt[case]] <- x[,,bt[case]]%*%P[,,bt[case]]%*%t(x[,,bt[case]]) + R
+    #if(!isSymmetric(Var[,,bt[case]])) Var[,,i] <- (t(Var[,,i])+Var[,,i])/2
     for(i in bt[case]:(et[case]-1)) {
+      if(!isSymmetric(Var[,,i])) Var[,,i] <- (t(Var[,,i])+Var[,,i])/2
       H[,,i] <- solve(Var[,,i])
       K <- P[,,i]%*%t(x[,,i])%*%H[,,i]
       L[,,i] <- A%*%(II - K%*%x[,,i])
@@ -80,7 +82,7 @@ mvdlrm.em <- function(smth,y,x,A,nt=nrow(x),nx=ncol(x),lt=1,bt=1,et=nt) {
     }
   }
   
-  p <- y - t(apply(x*array(rep(smth$wks,each=2),dim=c(ny,nx,nt)),c(1,3),sum))
+  p <- y - t(apply(x*array(rep(t(smth$wks),each=2),dim=c(ny,nx,nt)),c(1,3),sum))
 
   ws <- apply(smth$w0s,1,mean)
 
@@ -102,7 +104,7 @@ mvdlrm.em <- function(smth,y,x,A,nt=nrow(x),nx=ncol(x),lt=1,bt=1,et=nt) {
     #R <- (1/nt)* matrix(rowSums(apply(p,1,function(x) x%o%x)),ncol=2)
     R <- 0
     for(i in 1:nt) {
-        R <- R + p[i,]%o%p[i,] + x[,,i]%*%smth$Pks[,,i]%*%t(x[,,1])
+        R <- R + p[i,]%o%p[i,] + x[,,i]%*%smth$Pks[,,i]%*%t(x[,,i])
     }
     R <- R/nt
    
@@ -154,7 +156,12 @@ mvdlrm.opt <- function(y,x,A,Q,R,ws,Sigma,Q.diag=FALSE,Sigma.diag=FALSE,R.diag=F
       attr(ws,"dim") <- dimws
     }
     if(length(tmp <- grep("R",names)) > 0) {
-      if(R.diag) R <- as.matrix(nlme::pdDiag(par[tmp])) else R <- as.matrix(nlme::pdSymm(par[tmp]))
+      chk <- FALSE
+      try({
+        if(R.diag) R <- as.matrix(nlme::pdDiag(par[tmp])) else R <- as.matrix(nlme::pdSymm(par[tmp]))
+        chk <- TRUE
+      })
+      if(!chk) return(NA)
       #attr(R,"dim") <- dimR
       if(any(R==Inf)) return(NA)
     }
@@ -166,16 +173,15 @@ mvdlrm.opt <- function(y,x,A,Q,R,ws,Sigma,Q.diag=FALSE,Sigma.diag=FALSE,R.diag=F
       })
       if(!chk) return(NA)
     }
-
     -mvdlrm.filter(y,x,A,Q,R,ws,Sigma,nt,nx,lt,bt,et)$like
   }
 
   start <- list()
   if(est.A) start$A <- as.numeric(A)
-  if(est.Q) start$Q <- coef(nlme::pdSymm(Q))
-  if(est.R) start$R <- coef(nlme::pdSymm(R))
+  if(est.Q) if(Q.diag) start$Q <- coef(nlme::pdDiag(Q)) else start$Q <- coef(nlme::pdSymm(Q))
+  if(est.R) if(R.diag) start$R <- coef(nlme::pdDiag(R)) else start$R <- coef(nlme::pdSymm(R))
   if(est.ws) start$ws <- as.numeric(ws)
-  if(est.Sigma) start$Sigma <- coef(nlme::pdSymm(Sigma))
+  if(est.Sigma) if(Sigma.diag) start$Sigma <- coef(nlme::pdDiag(Sigma)) else start$Sigma <- coef(nlme::pdSymm(Sigma))
 
   fit <- optim(unlist(start),func,method=method,hessian=hessian,lt=lt,bt=bt,et=et,...)
 
@@ -349,5 +355,5 @@ mvdlrm <- function(y,x,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,R.c = NULL,
   if(maxit==0 | filter.only) npar <- 0 # nothing was actually estimated
   
   colnames(filt$w) <- colnames(smth$wks) <- x.names
-  return(list(call=call,response=y,predictor=x,weight=smth$wks,predicted=t(apply(x*array(rep(smth$wks,each=2),dim=c(ny,nx,nt)),c(1,3),sum)),weight.cov=smth$Pks,weight.filter=filt$w,predicted.onestep=filt$onestep,predicted.onestep.var=filt$var,A=A,Q=Q,R=R,ws=ws,Sigma=Sigma,LL=filt$like,npar=npar,niter=j,convergence=LL.dif,hessian=Hess))
+  return(list(call=call,response=y,predictor=x,weight=smth$wks,predicted=t(apply(x*array(rep(t(smth$wks),each=2),dim=c(ny,nx,nt)),c(1,3),sum)),weight.cov=smth$Pks,weight.filter=filt$w,predicted.onestep=filt$onestep,predicted.onestep.var=filt$var,A=A,Q=Q,R=R,ws=ws,Sigma=Sigma,LL=filt$like,npar=npar,niter=j,convergence=LL.dif,hessian=Hess))
 }

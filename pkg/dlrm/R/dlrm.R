@@ -325,10 +325,10 @@ dlrm.opt <- function(y,x,A,Q,R,ws,Sigma,Q.diag=FALSE,Sigma.diag=FALSE,est.ws=TRU
 
   start <- list()
   if(est.A) start$A <- as.numeric(A)
-  if(est.Q) start$Q <- coef(nlme::pdSymm(Q))
+  if(est.Q) if(Q.diag) start$Q <- coef(nlme::pdDiag(Q)) else start$Q <- coef(nlme::pdSymm(Q))
   if(est.R) start$R <- log(R)
   if(est.ws) start$ws <- as.numeric(ws)
-  if(est.Sigma) start$Sigma <- coef(nlme::pdSymm(Sigma))
+  if(est.Sigma) if(Sigma.diag) start$Sigma <- coef(nlme::pdDiag(Sigma)) else start$Sigma <- coef(nlme::pdSymm(Sigma))
 
   fit <- optim(unlist(start),func,method=method,hessian=hessian,lt=lt,bt=bt,et=et,...)
 

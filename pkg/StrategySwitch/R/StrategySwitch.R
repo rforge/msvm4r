@@ -198,6 +198,9 @@ StrategySwitch <- function(y,X,Z,prior,A,b,tol=1e-4,maxiter=200,A.est=TRUE,prior
     dat[[i]] <- data.frame(cbind(y=y[[i]],x=as.numeric(X[[i]]%*%t(Z))))
     py <- matrix(1/(1+exp(-b[i]*dat[[i]]$x)),ncol=ns)
     B[[i]] <- (py^y[[i]])*(1-py)^(1-y[[i]])
+    #dat[[i]] <- list(y=y[[i]],x=X[[i]]%*%t(Z))
+    #py <- 1/(1+exp(-b[i]*dat[[i]]$x))
+    #B[[i]] <- (py^y[[i]])*(1-py)^(1-y[[i]])
     fbo[[i]] <- rule.fb(A=A[[A.group[i]]],B=B[[i]],prior=prior)
     LL[i] <- fbo[[i]]$logLike
   }
@@ -211,8 +214,6 @@ StrategySwitch <- function(y,X,Z,prior,A,b,tol=1e-4,maxiter=200,A.est=TRUE,prior
     j <- j+1
     
     # updates
-    
-    
     if(estprior) {
       for(i in 1:ni) priors[i,] <- fbo[[i]]$gamma[1,]
       prior <- colMeans(priors)
@@ -242,18 +243,23 @@ StrategySwitch <- function(y,X,Z,prior,A,b,tol=1e-4,maxiter=200,A.est=TRUE,prior
     if(estb) {
       for(k in b.id) {
         tdat <- data.frame()
-        gamma <- numeric(0)
+        #tdat <- list(y=numeric(0),x=numeric(0))
+        #gamma <- numeric(0)
+        gamma <- vector()
         for(i in (1:ni)[b.est==k]) {
-	  # check for random strategies
-	  rnd <- which(apply(matrix(dat[[i]]$x,nrow=nt),2,function(x) sum(x!=0))==0)
-	  if(length(rnd) > 0) {
-	    del <- as.numeric(matrix(1:ns*nt[i],ncol=ns)[,rnd])
-	    tdat <- rbind(tdat,dat[[i]][-del,]) # delete random strategies
-	    gamma <- c(gamma,as.numeric(fbo[[i]]$gamma[,-rnd])) # delete random strategy
-	  } else {
-	    tdat <- rbind(tdat,dat[[i]]) # delete random strategy
-	    gamma <- c(gamma,as.numeric(fbo[[i]]$gamma)) # delete random strategy
-	  }
+	        # check for random strategies
+	        rnd <- which(apply(matrix(dat[[i]]$x,nrow=nt),2,function(x) sum(x!=0))==0)
+	        #rnd <- which(apply(dat[[i]]$x,2,function(x) sum(x!=0))==0)
+	        if(length(rnd) > 0) {
+	          del <- as.numeric(matrix(1:(ns*nt[i]),ncol=ns)[,rnd])
+	          tdat <- rbind(tdat,dat[[i]][-del,]) # delete random strategies
+	          #tdat$x <- rbind(tdat$x,dat[[i]]$x[,-rnd]) # delete random strategies
+	          #tdat$y <- c(tdat$y,dat[[i]]$y) # delete random strategies
+	          gamma <- c(gamma,as.numeric(fbo[[i]]$gamma[,-rnd])) # delete random strategy
+	        } else {
+	          tdat <- rbind(tdat,dat[[i]]) # delete random strategy
+	          gamma <- c(gamma,as.numeric(fbo[[i]]$gamma)) # delete random strategy
+	        }
         }
         tdat$w <- gamma
         b <- replace(b,b.est==k,glm(y~x-1,data=tdat,family=binomial(),weights=tdat$w)$coefficients)
