@@ -349,5 +349,5 @@ mvdlrm <- function(y,x,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,R.c = NULL,
   if(maxit==0 | filter.only) npar <- 0 # nothing was actually estimated
   
   colnames(filt$w) <- colnames(smth$wks) <- x.names
-  return(list(call=call,response=y,predictor=x,weight=smth$wks,predicted=rowSums(smth$wks*x),weight.cov=smth$Pks,weight.filter=filt$w,predicted.onestep=filt$onestep,predicted.onestep.var=filt$var,A=A,Q=Q,R=R,ws=ws,Sigma=Sigma,LL=filt$like,npar=npar,niter=j,convergence=LL.dif,hessian=Hess))
+  return(list(call=call,response=y,predictor=x,weight=smth$wks,predicted=t(apply(x*array(rep(smth$wks,each=2),dim=c(ny,nx,nt)),c(1,3),sum)),weight.cov=smth$Pks,weight.filter=filt$w,predicted.onestep=filt$onestep,predicted.onestep.var=filt$var,A=A,Q=Q,R=R,ws=ws,Sigma=Sigma,LL=filt$like,npar=npar,niter=j,convergence=LL.dif,hessian=Hess))
 }
