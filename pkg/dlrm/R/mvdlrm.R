@@ -211,7 +211,7 @@ mvdlrm.opt <- function(y,x,A,Q,R,ws,Sigma,Q.diag=FALSE,Sigma.diag=FALSE,R.diag=F
 }
 
 
-mvdlrm <- function(y,x,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,R.c = NULL,ntimes=NULL,tol=1e-5,est.ws=TRUE,est.Sigma=TRUE,est.A=TRUE,est.Q=TRUE,est.R=TRUE,filter.only=FALSE,verbose=FALSE,criterion=c("logLik","parameter"),method="BFGS",hessian=FALSE,switch.LL=.5,switch.wait=5) {
+mvdlrm <- function(y,x,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,R.c = NULL,ntimes=NULL,tol=1e-5,est=TRUE,est.ws=TRUE,est.Sigma=TRUE,est.A=TRUE,est.Q=TRUE,est.R=TRUE,filter.only=FALSE,verbose=FALSE,criterion=c("logLik","parameter"),method="BFGS",hessian=FALSE,switch.LL=.5,switch.wait=5) {
   # Dynamic Linear Regression Model 
   #    using Kalman filter/smoother and EM/numerical optimization
   # author: M. Speekenbrink
@@ -274,11 +274,15 @@ mvdlrm <- function(y,x,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,R.c = NULL,
   k <- 0
   LL.dif <- tol+3
   
-  if(verbose) cat("Kalman filter EM \n")
-  converge <- FALSE
-  opt.ok <- FALSE
-  force.opt <- FALSE
+  if(est) {
+    converge <- FALSE 
+    if(verbose) cat("Kalman filter EM \n")
+    opt.ok <- FALSE
+    force.opt <- FALSE
+  } else converge <- TRUE
+  
   Hess <- NULL
+
   while(j <= maxit && !converge) {
     #abs(LL.dif) > tol
     # Expectation Maximisation
@@ -346,14 +350,16 @@ mvdlrm <- function(y,x,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,R.c = NULL,
   }
   # Number of free parameters (EM)
   npar <- 0
-  if(est.ws) npar <- npar + length(ws)
-  if(est.Sigma) npar <- npar + sum(Sigma.c[lower.tri(Sigma.c,diag=TRUE)])
-  if(est.A) npar <- npar + length(A)
-  if(est.Q) npar <- npar + sum(Q.c[lower.tri(Q.c,diag=TRUE)])
-  if(est.R) npar <- npar + sum(R.c[lower.tri(R.c,diag=TRUE)])
   
-  if(maxit==0 | filter.only) npar <- 0 # nothing was actually estimated
-  
+  if(est) {
+      if(est.ws) npar <- npar + length(ws)
+      if(est.Sigma) npar <- npar + sum(Sigma.c[lower.tri(Sigma.c,diag=TRUE)])
+      if(est.A) npar <- npar + length(A)
+      if(est.Q) npar <- npar + sum(Q.c[lower.tri(Q.c,diag=TRUE)])
+      if(est.R) npar <- npar + sum(R.c[lower.tri(R.c,diag=TRUE)])
+      
+      if(maxit==0 | filter.only) npar <- 0 # nothing was actually estimated
+  }
   colnames(filt$w) <- colnames(smth$wks) <- x.names
   return(list(call=call,response=y,predictor=x,weight=smth$wks,predicted=t(apply(x*array(rep(t(smth$wks),each=2),dim=c(ny,nx,nt)),c(1,3),sum)),weight.cov=smth$Pks,weight.filter=filt$w,predicted.onestep=filt$onestep,predicted.onestep.var=filt$var,A=A,Q=Q,R=R,ws=ws,Sigma=Sigma,LL=filt$like,npar=npar,niter=j,convergence=LL.dif,hessian=Hess))
 }
