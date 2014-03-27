@@ -1,4 +1,4 @@
-Changes in dlrm version 1.0-1
+Changes in dlrm version 1.0-2
 
   o Fixed bug in calculation of the log likelihood in dlrm and 
     mvdlrm. The last observation in each series was not included,
