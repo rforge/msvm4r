@@ -231,7 +231,6 @@ mvdlrm <- function(y,x,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,R.c = NULL,
   
   if(length(dim(x)) != 3) stop("x should be an array with dimension ny*nx*nt")
   x.names <- dimnames(x)[[2]]
-
   
   nx <- dim(x)[2]
   nt <- dim(x)[3]
