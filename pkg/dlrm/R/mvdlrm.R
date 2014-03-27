@@ -212,7 +212,7 @@ mvdlrm.opt <- function(y,x,A,Q,R,ws,Sigma,Q.diag=FALSE,Sigma.diag=FALSE,R.diag=F
 }
 
 
-mvdlrm <- function(y,x,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,R.c = NULL,ntimes=NULL,tol=1e-5,est=TRUE,est.ws=TRUE,est.Sigma=TRUE,est.A=TRUE,est.Q=TRUE,est.R=TRUE,filter.only=FALSE,verbose=FALSE,criterion=c("logLik","parameter"),method="BFGS",hessian=FALSE,switch.LL=.5,switch.wait=5) {
+mvdlrm <- function(y,x,maxit=100,ws,Sigma,A,Q,R,Q.c=NULL,Sigma.c=Q.c,R.c = NULL,ntimes=NULL,tol=1e-5,est=TRUE,est.ws=TRUE,est.Sigma=TRUE,est.A=TRUE,est.Q=TRUE,est.R=TRUE,filter.only=FALSE,verbose=FALSE,criterion=c("logLik","parameter"),method="BFGS",switch.LL=.5,switch.wait=5) {
   # Dynamic Linear Regression Model 
   #    using Kalman filter/smoother and EM/numerical optimization
   # author: M. Speekenbrink

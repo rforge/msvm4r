@@ -22,8 +22,8 @@
 
 \source{
 
-Speekenbrink, M. \&  Shanks, D.R. (2008). Learning in a changing environment. 
-\emph{Manuscript submitted for publication}.
+Speekenbrink, M. \&  Shanks, D.R. (2010). Learning in a changing environment. 
+\emph{Journal of Experimental Psychology: General}, \emph{139}, 266-298.
 
 }
 

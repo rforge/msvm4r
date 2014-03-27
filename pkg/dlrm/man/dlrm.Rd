@@ -78,8 +78,8 @@ the Kalman smoother.
 \value{A list with estimated A, b, prior, etc.}
 \author{Maarten Speekenbrink}
 \references{
-Speekenbrink, M. & Shanks, D. R. (2010) Learning in a changing environment. 
-Journal of Experimental Psychology: General.
+Speekenbrink, M. \&  Shanks, D.R. (2010). Learning in a changing environment. 
+\emph{Journal of Experimental Psychology: General}, \emph{139}, 266-298.
 }
 \examples{
 ## open StockMarket Prediction Task data

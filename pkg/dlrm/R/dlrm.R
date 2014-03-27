@@ -360,8 +360,8 @@ dlrm.opt <- function(y,x,A,Q,R,ws,Sigma,Q.diag=FALSE,Sigma.diag=FALSE,est.ws=TRU
 
 dlrm.hess <- function(y,x,A,Q,R,ws,Sigma,Q.diag,Sigma.diag,est.ws,est.Sigma,est.A,est.Q,est.R,lt=1,bt=1,et=nt,method="numDeriv",...) {
   #require(numDeriv)
-  if(method=="numDeriv") require(numDeriv)
-  if(method=="fdHess") require(nlme)
+  #if(method=="numDeriv") require(numDeriv)
+  #if(method=="fdHess") require(nlme)
   
   dimR <- attr(R,"dim")
   dimA <- attr(A,"dim")
@@ -431,7 +431,9 @@ dlrm.hess <- function(y,x,A,Q,R,ws,Sigma,Q.diag,Sigma.diag,est.ws,est.Sigma,est.
   hess
 }
 
-dlrm.Hessian <- function(mod,method="numDeriv",ntimes,...) {
+dlrm.Hessian <- function(mod,method=c("numDeriv","dfHess"),ntimes,...) {
+  method <- match.arg(method)
+  
   y <- mod$response
   x <- mod$predictor
   A <- mod$A
