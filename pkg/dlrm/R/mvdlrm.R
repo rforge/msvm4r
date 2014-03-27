@@ -37,6 +37,7 @@ mvdlrm.filter <- function(y,x,A,Q,R,ws,Sigma,nt=dim(x)[3],nx=dim(x)[2],lt=1,bt=1
     L[,,et[case]] <- A%*%(II - K%*%x[,,et[case]])
     
     onestep[et[case],] <- x[,,et[case]]%*%w[et[case],]
+    if(!any(is.na(y[et[case],]))) like <- like + dmvnorm(y[et[case],],onestep[et[case],],Var[,,et[case]],log=TRUE)
   }
   return(list(w=w,P=P,H=H,L=L,onestep=onestep,like=like,var=Var))
 }

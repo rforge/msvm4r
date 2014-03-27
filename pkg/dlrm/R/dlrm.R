@@ -37,6 +37,7 @@ dlrm.filter <- function(y,x,A,Q,R,ws,Sigma,nt=nrow(x),nx=ncol(x),lt=1,bt=1,et=nt
     L[,,et[case]] <- A%*%(II - K%*%B)
     
     onestep[et[case]] <- t(x[et[case],])%*%w[et[case],]
+    if(!any(is.na(y[et[case],]))) like <- like + dnorm(y[et[case],],onestep[et[case]],sqrt(Var[et[case]]),log=TRUE) 
   }
   return(list(w=w,P=P,H=H,L=L,onestep=onestep,like=like,var=Var))
 }
